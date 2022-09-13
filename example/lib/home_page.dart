@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:android_path_provider/android_path_provider.dart';
 import 'package:device_info/device_info.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_downloader_example/data.dart';
@@ -34,7 +35,9 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
 
-    _bindBackgroundIsolate();
+    if (!kIsWeb) {
+      _bindBackgroundIsolate();
+    }
 
     FlutterDownloader.registerCallback(downloadCallback, step: 1);
 
@@ -96,8 +99,7 @@ class _MyHomePageState extends State<MyHomePage> {
       'task ($id) is in status ($status) and process ($progress)',
     );
 
-    IsolateNameServer.lookupPortByName('downloader_send_port')
-        ?.send([id, status, progress]);
+    IsolateNameServer.lookupPortByName('downloader_send_port')?.send([id, status, progress]);
   }
 
   Widget _buildDownloadList() => ListView(
@@ -234,14 +236,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<bool> _checkPermission() async {
+    if (kIsWeb) {
+      return true;
+    }
+
     if (Platform.isIOS) {
       return true;
     }
 
     final deviceInfo = DeviceInfoPlugin();
     final androidInfo = await deviceInfo.androidInfo;
-    if (widget.platform == TargetPlatform.android &&
-        androidInfo.version.sdkInt <= 28) {
+    if (widget.platform == TargetPlatform.android && androidInfo.version.sdkInt <= 28) {
       final status = await Permission.storage.status;
       if (status != PermissionStatus.granted) {
         final result = await Permission.storage.request();
@@ -282,8 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     _tasks!.addAll(
-      DownloadItems.images
-          .map((image) => TaskInfo(name: image.name, link: image.url)),
+      DownloadItems.images.map((image) => TaskInfo(name: image.name, link: image.url)),
     );
 
     _items.add(ItemHolder(name: 'Images'));
@@ -293,8 +297,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     _tasks!.addAll(
-      DownloadItems.videos
-          .map((video) => TaskInfo(name: video.name, link: video.url)),
+      DownloadItems.videos.map((video) => TaskInfo(name: video.name, link: video.url)),
     );
 
     _items.add(ItemHolder(name: 'Videos'));
@@ -304,8 +307,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     _tasks!.addAll(
-      DownloadItems.apks
-          .map((video) => TaskInfo(name: video.name, link: video.url)),
+      DownloadItems.apks.map((video) => TaskInfo(name: video.name, link: video.url)),
     );
 
     _items.add(ItemHolder(name: 'APKs'));
@@ -337,6 +339,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _prepareSaveDir() async {
+    if (kIsWeb) {
+      _localPath = '';
+      return;
+    }
+
     _localPath = (await _findLocalPath())!;
     final savedDir = Directory(_localPath);
     final hasExisted = savedDir.existsSync();
@@ -355,8 +362,7 @@ class _MyHomePageState extends State<MyHomePage> {
         externalStorageDirPath = directory?.path;
       }
     } else if (Platform.isIOS) {
-      externalStorageDirPath =
-          (await getApplicationDocumentsDirectory()).absolute.path;
+      externalStorageDirPath = (await getApplicationDocumentsDirectory()).absolute.path;
     }
     return externalStorageDirPath;
   }
@@ -367,7 +373,7 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
         actions: [
-          if (Platform.isIOS)
+          if (!kIsWeb && Platform.isIOS)
             PopupMenuButton<Function>(
               icon: const Icon(Icons.more_vert, color: Colors.white),
               shape: RoundedRectangleBorder(
@@ -393,9 +399,7 @@ class _MyHomePageState extends State<MyHomePage> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return _permissionReady
-              ? _buildDownloadList()
-              : _buildNoPermissionWarning();
+          return _permissionReady ? _buildDownloadList() : _buildNoPermissionWarning();
         },
       ),
     );

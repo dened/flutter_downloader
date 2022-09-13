@@ -13,6 +13,9 @@ flutter:
         pluginClass: FlutterDownloaderPlugin
       ios:
         pluginClass: FlutterDownloaderPlugin
+      web:
+        pluginClass: DownloaderWeb
+        fileName: _internal/downloader_web.dart
 
 environment:
   sdk: ">=2.17.0 <3.0.0"

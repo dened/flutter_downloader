@@ -12,6 +12,7 @@
 
 library flutter_downloader;
 
+export '_internal/downloader_web.dart';
 export 'src/downloader.dart';
 export 'src/downloader_platform_interface.dart';
 export 'src/exceptions.dart';
